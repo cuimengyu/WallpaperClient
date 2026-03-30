@@ -30,6 +30,7 @@ namespace WallpaperClient.ViewModels
         private AppSettings _settings = null!;
         private Wallpaper? _selectedWallpaper;
         private bool _isLocalWallpapersView;
+        private bool _isDownloadsView;
 
         #endregion
 
@@ -138,6 +139,15 @@ namespace WallpaperClient.ViewModels
         }
 
         /// <summary>
+        /// 是否处于下载管理视图
+        /// </summary>
+        public bool IsDownloadsView
+        {
+            get => _isDownloadsView;
+            set => SetProperty(ref _isDownloadsView, value);
+        }
+
+        /// <summary>
         /// 壁纸列表
         /// </summary>
         public ObservableCollection<Wallpaper> Wallpapers { get; set; }
@@ -241,6 +251,31 @@ namespace WallpaperClient.ViewModels
         /// </summary>
         public RelayCommand<Wallpaper> SelectWallpaperCommand { get; }
 
+        /// <summary>
+        /// 取消下载命令
+        /// </summary>
+        public RelayCommand<string> CancelDownloadCommand { get; }
+
+        /// <summary>
+        /// 暂停下载命令
+        /// </summary>
+        public RelayCommand<string> PauseDownloadCommand { get; }
+
+        /// <summary>
+        /// 恢复下载命令
+        /// </summary>
+        public RelayCommand<string> ResumeDownloadCommand { get; }
+
+        /// <summary>
+        /// 删除下载任务命令
+        /// </summary>
+        public RelayCommand<string> RemoveDownloadCommand { get; }
+
+        /// <summary>
+        /// 取消所有下载命令
+        /// </summary>
+        public RelayCommand CancelAllDownloadsCommand { get; }
+
         #endregion
 
         #region 构造函数
@@ -274,6 +309,11 @@ namespace WallpaperClient.ViewModels
             GetLatestWallpapersCommand = new AsyncRelayCommand(GetLatestWallpapersAsync);
             GetRandomWallpapersCommand = new AsyncRelayCommand(GetRandomWallpapersAsync);
             SelectWallpaperCommand = new RelayCommand<Wallpaper>(SelectWallpaper);
+            CancelDownloadCommand = new RelayCommand<string>(CancelDownload);
+            PauseDownloadCommand = new RelayCommand<string>(PauseDownload);
+            ResumeDownloadCommand = new RelayCommand<string>(ResumeDownload);
+            RemoveDownloadCommand = new RelayCommand<string>(RemoveDownload);
+            CancelAllDownloadsCommand = new RelayCommand(CancelAllDownloads);
         }
 
         /// <summary>
@@ -638,6 +678,7 @@ namespace WallpaperClient.ViewModels
 
                 // 切换到本地壁纸视图
                 IsLocalWallpapersView = true; // 标记为本地壁纸视图
+                IsDownloadsView = false; // 关闭下载管理视图
                 Wallpapers.Clear();
                 foreach (var wallpaper in localWallpapers)
                 {
@@ -686,6 +727,8 @@ namespace WallpaperClient.ViewModels
                 }
 
                 // 切换到收藏视图
+                IsLocalWallpapersView = false; // 关闭本地壁纸视图
+                IsDownloadsView = false; // 关闭下载管理视图
                 Wallpapers.Clear();
                 foreach (var wallpaper in favoriteWallpapers)
                 {
@@ -713,27 +756,9 @@ namespace WallpaperClient.ViewModels
         {
             try
             {
-                IsLocalWallpapersView = false; // 切换到下载管理视图
-                if (DownloadTasks.Count == 0)
-                {
-                    MessageBox.Show("您还没有任何下载任务。\n\n浏览壁纸时点击下载按钮即可开始下载。",
-                        "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
-
-                // 显示下载任务统计
-                var completedCount = DownloadTasks.Count(d => d.State == DownloadState.Completed);
-                var downloadingCount = DownloadTasks.Count(d => d.State == DownloadState.Downloading);
-                var failedCount = DownloadTasks.Count(d => d.State == DownloadState.Failed);
-
-                var message = $"下载任务统计：\n\n" +
-                             $"✓ 已完成: {completedCount} 个\n" +
-                             $"⏳ 下载中: {downloadingCount} 个\n" +
-                             $"✗ 失败: {failedCount} 个\n" +
-                             $"━━━━━━━━━━\n" +
-                             $"总计: {DownloadTasks.Count} 个任务";
-
-                MessageBox.Show(message, "下载管理", MessageBoxButton.OK, MessageBoxImage.Information);
+                IsLocalWallpapersView = false;
+                IsDownloadsView = true;
+                StatusMessage = $"下载管理 - 共 {DownloadTasks.Count} 个任务";
             }
             catch (Exception ex)
             {
@@ -934,6 +959,145 @@ namespace WallpaperClient.ViewModels
             finally
             {
                 IsLoading = false;
+            }
+        }
+
+        /// <summary>
+        /// 取消下载任务
+        /// </summary>
+        /// <param name="downloadId">下载任务ID</param>
+        private void CancelDownload(string? downloadId)
+        {
+            if (string.IsNullOrEmpty(downloadId) || _downloadService == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var success = _downloadService.CancelDownload(downloadId);
+                if (success)
+                {
+                    StatusMessage = "已取消下载任务";
+                }
+                else
+                {
+                    StatusMessage = "取消下载任务失败";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"取消下载失败: {ex.Message}";
+                Log.Error(ex, "取消下载失败: {DownloadId}", downloadId);
+            }
+        }
+
+        /// <summary>
+        /// 暂停下载任务
+        /// </summary>
+        /// <param name="downloadId">下载任务ID</param>
+        private void PauseDownload(string? downloadId)
+        {
+            if (string.IsNullOrEmpty(downloadId) || _downloadService == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var success = _downloadService.PauseDownload(downloadId);
+                if (success)
+                {
+                    StatusMessage = "已暂停下载任务";
+                }
+                else
+                {
+                    StatusMessage = "暂停下载任务失败";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"暂停下载失败: {ex.Message}";
+                Log.Error(ex, "暂停下载失败: {DownloadId}", downloadId);
+            }
+        }
+
+        /// <summary>
+        /// 恢复下载任务
+        /// </summary>
+        /// <param name="downloadId">下载任务ID</param>
+        private void ResumeDownload(string? downloadId)
+        {
+            if (string.IsNullOrEmpty(downloadId) || _downloadService == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var success = _downloadService.ResumeDownload(downloadId);
+                if (success)
+                {
+                    StatusMessage = "已恢复下载任务";
+                }
+                else
+                {
+                    StatusMessage = "恢复下载任务失败";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"恢复下载失败: {ex.Message}";
+                Log.Error(ex, "恢复下载失败: {DownloadId}", downloadId);
+            }
+        }
+
+        /// <summary>
+        /// 删除下载任务
+        /// </summary>
+        /// <param name="downloadId">下载任务ID</param>
+        private void RemoveDownload(string? downloadId)
+        {
+            if (string.IsNullOrEmpty(downloadId))
+            {
+                return;
+            }
+
+            try
+            {
+                var task = DownloadTasks.FirstOrDefault(d => d.Id == downloadId);
+                if (task != null)
+                {
+                    DownloadTasks.Remove(task);
+                    StatusMessage = "已删除下载任务";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"删除下载任务失败: {ex.Message}";
+                Log.Error(ex, "删除下载任务失败: {DownloadId}", downloadId);
+            }
+        }
+
+        /// <summary>
+        /// 取消所有下载任务
+        /// </summary>
+        private void CancelAllDownloads()
+        {
+            if (_downloadService == null)
+            {
+                return;
+            }
+
+            try
+            {
+                _downloadService.CancelAllDownloads();
+                StatusMessage = "已取消所有下载任务";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"取消所有下载失败: {ex.Message}";
+                Log.Error(ex, "取消所有下载失败");
             }
         }
 

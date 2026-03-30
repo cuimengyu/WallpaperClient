@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+using WallpaperClient.Services;
 
 namespace WallpaperClient.Converters
 {
@@ -489,7 +490,7 @@ namespace WallpaperClient.Converters
 
     /// <summary>
     /// 图片 URL 优先级转换器
-    /// 优先使用 SmallUrl，如果为空则使用 ThumbnailUrl
+    /// 优先使用本地文件 LocalPath，如果不存在则使用中等分辨率 ThumbnailUrl，然后是原图 Url，最后使用 SmallUrl
     /// </summary>
     public class ImageUrlConverter : IValueConverter
     {
@@ -498,17 +499,27 @@ namespace WallpaperClient.Converters
             // value 应该是 Wallpaper 对象
             if (value is Models.Wallpaper wallpaper)
             {
-                // 优先使用 SmallUrl（高清小图），如果为空则使用 ThumbnailUrl（缩略图）
-                if (!string.IsNullOrWhiteSpace(wallpaper.SmallUrl))
+                // 优先使用本地文件（如果存在）
+                if (!string.IsNullOrWhiteSpace(wallpaper.LocalPath) && System.IO.File.Exists(wallpaper.LocalPath))
                 {
-                    return wallpaper.SmallUrl;
+                    return wallpaper.LocalPath;
                 }
+
+                // 如果没有本地文件，使用缩略图（中等分辨率，加载速度适中）
                 if (!string.IsNullOrWhiteSpace(wallpaper.ThumbnailUrl))
                 {
                     return wallpaper.ThumbnailUrl;
                 }
-                // 最后使用原图 URL（可能会比较大，加载慢）
-                return wallpaper.Url;
+                // 如果缩略图为空，使用原图 URL（最高分辨率）
+                if (!string.IsNullOrWhiteSpace(wallpaper.Url))
+                {
+                    return wallpaper.Url;
+                }
+                // 最后使用小图（低分辨率）
+                if (!string.IsNullOrWhiteSpace(wallpaper.SmallUrl))
+                {
+                    return wallpaper.SmallUrl;
+                }
             }
 
             // 如果直接传入字符串 URL
@@ -518,6 +529,39 @@ namespace WallpaperClient.Converters
             }
 
             return DependencyProperty.UnsetValue;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// 下载状态到可见性转换器
+    /// </summary>
+    public class DownloadStateToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is DownloadState state && parameter is string action)
+            {
+                return action switch
+                {
+                    "CanPause" => state == DownloadState.Downloading || state == DownloadState.Paused
+                        ? Visibility.Visible : Visibility.Collapsed,
+                    "IsDownloading" => state == DownloadState.Downloading
+                        ? Visibility.Visible : Visibility.Collapsed,
+                    "IsPaused" => state == DownloadState.Paused
+                        ? Visibility.Visible : Visibility.Collapsed,
+                    "CanCancel" => state == DownloadState.Downloading || state == DownloadState.Paused || state == DownloadState.Pending
+                        ? Visibility.Visible : Visibility.Collapsed,
+                    "CanRemove" => state == DownloadState.Completed || state == DownloadState.Failed || state == DownloadState.Cancelled
+                        ? Visibility.Visible : Visibility.Collapsed,
+                    _ => Visibility.Collapsed
+                };
+            }
+            return Visibility.Collapsed;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

@@ -24,6 +24,7 @@
             <converters:StringToBrushConverter x:Key="StringToBrushConverter"/>
             <converters:RangeConverter x:Key="RangeConverter"/>
             <converters:ImageUrlConverter x:Key="ImageUrlConverter"/>
+            <converters:DownloadStateToVisibilityConverter x:Key="DownloadStateToVisibilityConverter"/>
 
             <!-- Windows 11 风格颜色 -->
             <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#F3F3F3"/>

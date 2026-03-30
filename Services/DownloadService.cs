@@ -34,7 +34,15 @@ namespace WallpaperClient.Services
 
         public DownloadService()
         {
-            _httpClient = new HttpClient
+            // 配置 HttpClientHandler 支持系统代理和自动解压缩
+            var handler = new HttpClientHandler
+            {
+                UseProxy = true,
+                Proxy = HttpClient.DefaultProxy, // 使用系统默认代理（支持浏览器代理）
+                AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+            };
+
+            _httpClient = new HttpClient(handler)
             {
                 Timeout = TimeSpan.FromMinutes(30)
             };
@@ -43,6 +51,7 @@ namespace WallpaperClient.Services
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
             _httpClient.DefaultRequestHeaders.Add("Referer", "https://wallhaven.cc/");
             _httpClient.DefaultRequestHeaders.Add("Accept", "image/webp,image/apng,image/*,*/*;q=0.8");
+            _httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7");
 
             _downloadTasks = new ConcurrentDictionary<string, DownloadTask>();
             _downloadQueue = new ConcurrentQueue<DownloadTask>();

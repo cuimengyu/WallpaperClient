@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:WallpaperClient.ViewModels"
         xmlns:system="clr-namespace:System;assembly=mscorlib"
+        xmlns:views="clr-namespace:WallpaperClient.Views"
         mc:Ignorable="d"
         Title="WallpaperOS"
         Width="1480"
@@ -578,10 +579,12 @@
 
                 <!-- 主内容区 -->
                 <Grid Grid.Row="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="280"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+                    <!-- 壁纸浏览视图 -->
+                    <Grid Visibility="{Binding IsDownloadsView, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="280"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
                     <!-- 左侧壁纸列表 -->
                     <Border Grid.Column="0"
@@ -661,7 +664,7 @@
                                             ClipToBounds="True"
                                             Background="{StaticResource HoverBackgroundBrush}">
                                         <Image Source="{Binding SelectedWallpaper, Converter={StaticResource ImageUrlConverter}}"
-                                              Stretch="UniformToFill"/>
+                                              Stretch="Uniform"/>
                                     </Border>
 
                                     <!-- 操作区 -->
@@ -878,6 +881,10 @@
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
+
+                    <!-- 下载管理视图 -->
+                    <views:DownloadsView Visibility="{Binding IsDownloadsView, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            </Grid>
             </Grid>
         </Grid>
     </Grid>
