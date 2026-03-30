@@ -14,20 +14,20 @@ namespace WallpaperClient.ViewModels
     /// </summary>
     public class MainViewModel : ViewModelBase
     {
-        private readonly IWallhavenService _wallhavenService;
-        private readonly IDownloadService _downloadService;
-        private readonly IDatabaseService _databaseService;
-        private readonly IWallpaperService _wallpaperService;
+        private readonly IWallhavenService? _wallhavenService;
+        private readonly IDownloadService? _downloadService;
+        private readonly IDatabaseService? _databaseService;
+        private readonly IWallpaperService? _wallpaperService;
 
         #region 私有字段
 
-        private ViewModelBase _currentView;
+        private ViewModelBase _currentView = null!;
         private bool _isLoading;
         private string _statusMessage = "就绪";
         private int _currentPage = 1;
         private int _totalPages = 1;
         private string _searchQuery = string.Empty;
-        private AppSettings _settings;
+        private AppSettings _settings = null!;
         private Wallpaper? _selectedWallpaper;
         private bool _isLocalWallpapersView;
 
@@ -528,7 +528,7 @@ namespace WallpaperClient.ViewModels
                 if (!string.IsNullOrEmpty(wallpaper.LocalPath) && File.Exists(wallpaper.LocalPath))
                 {
                     StatusMessage = "正在设置壁纸...";
-                    var success = await _wallpaperService.SetWallpaperAsync(wallpaper.LocalPath, WallpaperStyle.Fill);
+                    var success = await _wallpaperService!.SetWallpaperAsync(wallpaper.LocalPath, WallpaperStyle.Fill);
 
                     if (success)
                     {

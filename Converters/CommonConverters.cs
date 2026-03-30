@@ -213,7 +213,7 @@ namespace WallpaperClient.Converters
                     return result;
                 }
             }
-            return null;
+            return null!;
         }
     }
 
@@ -328,19 +328,20 @@ namespace WallpaperClient.Converters
         {
             if (value == null || parameter == null)
             {
-                return null;
+                return null!;
             }
 
             var isTrue = (bool)value;
             if (isTrue)
             {
                 var enumType = targetType.IsEnum ? targetType : Nullable.GetUnderlyingType(targetType);
-                if (enumType != null && Enum.IsDefined(enumType, parameter.ToString()))
+                var parameterString = parameter.ToString();
+                if (enumType != null && !string.IsNullOrEmpty(parameterString) && Enum.IsDefined(enumType, parameterString))
                 {
-                    return Enum.Parse(enumType, parameter.ToString());
+                    return Enum.Parse(enumType, parameterString);
                 }
             }
-            return null;
+            return null!;
         }
     }
 
