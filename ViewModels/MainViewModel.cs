@@ -236,6 +236,11 @@ namespace WallpaperClient.ViewModels
         /// </summary>
         public AsyncRelayCommand GetRandomWallpapersCommand { get; }
 
+        /// <summary>
+        /// 选择壁纸命令
+        /// </summary>
+        public RelayCommand<Wallpaper> SelectWallpaperCommand { get; }
+
         #endregion
 
         #region 构造函数
@@ -268,6 +273,7 @@ namespace WallpaperClient.ViewModels
             GetHotWallpapersCommand = new AsyncRelayCommand(GetHotWallpapersAsync);
             GetLatestWallpapersCommand = new AsyncRelayCommand(GetLatestWallpapersAsync);
             GetRandomWallpapersCommand = new AsyncRelayCommand(GetRandomWallpapersAsync);
+            SelectWallpaperCommand = new RelayCommand<Wallpaper>(SelectWallpaper);
         }
 
         /// <summary>
@@ -296,6 +302,18 @@ namespace WallpaperClient.ViewModels
         #endregion
 
         #region 公共方法
+
+        /// <summary>
+        /// 选择壁纸
+        /// </summary>
+        /// <param name="wallpaper">要选择的壁纸</param>
+        public void SelectWallpaper(Wallpaper? wallpaper)
+        {
+            if (wallpaper != null)
+            {
+                SelectedWallpaper = wallpaper;
+            }
+        }
 
         /// <summary>
         /// 初始化
@@ -817,6 +835,7 @@ namespace WallpaperClient.ViewModels
 
             try
             {
+                IsLocalWallpapersView = false; // 切换到热门壁纸视图
                 IsLoading = true;
                 StatusMessage = "正在加载热门壁纸...";
 
@@ -853,6 +872,7 @@ namespace WallpaperClient.ViewModels
 
             try
             {
+                IsLocalWallpapersView = false; // 切换到最新壁纸视图
                 IsLoading = true;
                 StatusMessage = "正在加载最新壁纸...";
 
@@ -889,6 +909,7 @@ namespace WallpaperClient.ViewModels
 
             try
             {
+                IsLocalWallpapersView = false; // 切换到随机壁纸视图
                 IsLoading = true;
                 StatusMessage = "正在加载随机壁纸...";
 

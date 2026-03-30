@@ -781,6 +781,11 @@
                                                CornerRadius="8"
                                                ClipToBounds="True">
                                             <Grid Height="200">
+                                                <Grid.InputBindings>
+                                                    <MouseBinding Command="{Binding DataContext.SelectWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                  CommandParameter="{Binding}"
+                                                                  MouseAction="LeftClick"/>
+                                                </Grid.InputBindings>
                                                 <Image Source="{Binding ThumbnailUrl}"
                                                       Stretch="UniformToFill"/>
 
